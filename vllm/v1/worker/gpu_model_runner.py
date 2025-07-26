@@ -1717,7 +1717,7 @@ class GPUModelRunner(LoRAModelRunnerMixin):
     @staticmethod
     def maybe_wait_for_kv_save() -> None:
         if has_kv_transfer_group():
-            get_kv_transfer_group().wait_for_save()
+            return get_kv_transfer_group().wait_for_save()
 
     @staticmethod
     def get_finished_kv_transfers(

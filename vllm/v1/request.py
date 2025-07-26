@@ -102,6 +102,7 @@ class Request:
         # State
         # The number of tokens with prefix cache hits.
         self.num_cached_tokens = -1
+        self.succeed_dumped_blocks = []
 
         # The number of NaNs in logits. A value greater than 0
         # indicates that the output is corrupted
