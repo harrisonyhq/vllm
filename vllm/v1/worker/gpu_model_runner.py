@@ -1715,7 +1715,7 @@ class GPUModelRunner(LoRAModelRunnerMixin):
             kv_connector.start_load_kv(get_forward_context())
 
     @staticmethod
-    def maybe_wait_for_kv_save() -> None:
+    def maybe_wait_for_kv_save():
         if has_kv_transfer_group():
             return get_kv_transfer_group().wait_for_save()
 
