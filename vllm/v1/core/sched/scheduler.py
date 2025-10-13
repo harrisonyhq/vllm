@@ -917,6 +917,12 @@ class Scheduler(SchedulerInterface):
             kv_transfer_params = None
             status_before_stop = request.status
 
+            if kv_connector_output.finished_dumping is not None:
+                request.succeed_dumped_blocks.extend(kv_connector_output.finished_dumping.get(req_id, []))
+                is_prefill = request.num_output_tokens == 0
+                if is_prefill:
+                    self.connector.connector.commit(kv_connector_output.finished_dumping.get(req_id, []), True)
+
             # Check for stop and update request status.
             if new_token_ids:
                 new_token_ids, stopped = self._update_request_with_output(

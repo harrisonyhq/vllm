@@ -176,7 +176,7 @@ class MultiprocExecutor(Executor):
         non_block: bool = False,
     ) -> Union[ModelRunnerOutput, Future[ModelRunnerOutput]]:
 
-        if not self.has_connector:
+        if not self.has_connector or self.vllm_config.model_config.use_mla:
             # get output only from a single worker (output_rank)
             (output, ) = self.collective_rpc(
                 "execute_model",

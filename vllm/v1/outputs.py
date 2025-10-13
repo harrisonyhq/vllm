@@ -86,6 +86,7 @@ class KVConnectorOutput:
     # [req_ids]
     finished_sending: Optional[set[str]] = None
     finished_recving: Optional[set[str]] = None
+    finished_dumping: Optional[dict[str, list[str]]] = None
     kv_connector_stats: Optional["KVConnectorStats"] = None
 
     def is_empty(self):

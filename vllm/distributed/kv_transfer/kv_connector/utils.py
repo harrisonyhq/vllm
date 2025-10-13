@@ -125,6 +125,7 @@ class KVOutputAggregator:
         # [req_id -> n_remaining_workers]
         self._recv_remaining_count = defaultdict[str, int](lambda: world_size)
         self._send_remaining_count = defaultdict[str, int](lambda: world_size)
+        self._dump_remaining_count = defaultdict[str, int](lambda: world_size)
 
     def aggregate(self,
                   outputs: list[ModelRunnerOutput],
@@ -140,8 +141,23 @@ class KVOutputAggregator:
                     finished_set.add(req_id)
                     del remaining_count_dict[req_id]
 
+        def update_finished_list(req_ids: Optional[dict[str, list[str]]],
+                                    remaining_count_dict: dict[str, int],
+                                    finished_list: dict[str, list[str]]) -> None:
+                for req_id, succeed_dump_blocks in (req_ids or {}).items():
+                    if req_id not in finished_list:
+                        finished_list[req_id] = []
+                    for blk_id in succeed_dump_blocks:
+                        new_count = remaining_count_dict[blk_id] - 1
+                        if new_count == 0:
+                            finished_list[req_id].append(blk_id)
+                            del remaining_count_dict[blk_id]
+                        else:
+                            remaining_count_dict[blk_id] = new_count
+
         finished_sending = set[str]()
         finished_recving = set[str]()
+        finished_dumping: dict[str, list[str]] = {}
         aggregated_kv_connector_stats = None
         for model_runner_output in outputs:
             output = model_runner_output.kv_connector_output
@@ -151,6 +167,8 @@ class KVOutputAggregator:
                                 self._send_remaining_count, finished_sending)
             update_finished_set(output.finished_recving,
                                 self._recv_remaining_count, finished_recving)
+            update_finished_list(output.finished_dumping,
+                                self._dump_remaining_count, finished_dumping)
 
             # Aggregate kv_connector_stats from all workers.
             if aggregated_kv_connector_stats is None:
@@ -171,6 +189,7 @@ class KVOutputAggregator:
         output.kv_connector_output = KVConnectorOutput(
             finished_sending=finished_sending or None,
             finished_recving=finished_recving or None,
+            finished_dumping=finished_dumping or None,
             kv_connector_stats=aggregated_kv_connector_stats or None,
         )
 

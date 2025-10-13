@@ -116,7 +116,7 @@ class KVConnectorModelRunnerMixin:
             yield output
         finally:
             if wait_for_save:
-                kv_connector.wait_for_save()
+                output.finished_dumping = kv_connector.wait_for_save()
 
             output.finished_sending, output.finished_recving = (
                 kv_connector.get_finished(scheduler_output.finished_req_ids))
