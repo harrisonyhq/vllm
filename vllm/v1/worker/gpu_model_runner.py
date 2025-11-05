@@ -1378,7 +1378,7 @@ class GPUModelRunner(LoRAModelRunnerMixin):
                 inputs_embeds=inputs_embeds,
             )
 
-            self.maybe_wait_for_kv_save()
+            finished_dumping = self.maybe_wait_for_kv_save()
             finished_sending, finished_recving = (
                 self.get_finished_kv_transfers(scheduler_output))
 
@@ -1562,6 +1562,7 @@ class GPUModelRunner(LoRAModelRunnerMixin):
             pooler_output=[],
             finished_sending=finished_sending,
             finished_recving=finished_recving,
+            finished_dumping=finished_dumping,
             num_nans_in_logits=num_nans_in_logits,
         )
 
@@ -1719,9 +1720,9 @@ class GPUModelRunner(LoRAModelRunnerMixin):
             kv_connector.start_load_kv(get_forward_context())
 
     @staticmethod
-    def maybe_wait_for_kv_save() -> None:
+    def maybe_wait_for_kv_save():
         if has_kv_transfer_group():
-            get_kv_transfer_group().wait_for_save()
+            return get_kv_transfer_group().wait_for_save()
 
     @staticmethod
     def get_finished_kv_transfers(

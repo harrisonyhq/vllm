@@ -99,8 +99,13 @@ class MultiConnector(KVConnectorBase_V1):
             c.save_kv_layer(layer_name, kv_layer, attn_metadata, **kwargs)
 
     def wait_for_save(self):
+        success_dumped_blocks = None
         for c in self._connectors:
-            c.wait_for_save()
+            uc_dump_blocks = c.wait_for_save()
+            if uc_dump_blocks:
+                success_dumped_blocks = uc_dump_blocks
+
+        return success_dumped_blocks if success_dumped_blocks else None
 
     def get_finished(
         self, finished_req_ids: set[str]

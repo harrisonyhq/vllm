@@ -34,6 +34,7 @@ from vllm.v1.outputs import ModelRunnerOutput
 from vllm.v1.request import Request, RequestStatus
 from vllm.v1.spec_decode.metrics import SpecDecodingStats
 from vllm.v1.structured_output import StructuredOutputManager
+from vllm.distributed.kv_transfer.kv_connector.v1.multi_connector import MultiConnector
 
 logger = init_logger(__name__)
 
@@ -791,6 +792,16 @@ class Scheduler(SchedulerInterface):
             new_logprobs = None
             new_token_ids = generated_token_ids
             kv_transfer_params = None
+            if model_runner_output.finished_dumping is not None:
+                request.succeed_dumped_blocks.extend(model_runner_output.finished_dumping.get(req_id, []))
+                is_prefill = request.num_output_tokens == 0
+                if is_prefill:
+                    if isinstance(self.connector, MultiConnector):
+                        for c in self.connector._connectors:
+                            if hasattr(c, 'connector') and hasattr(c.connector, 'commit'):
+                                c.connector.commit(model_runner_output.finished_dumping.get(req_id, []), True)
+                    else:
+                        self.connector.connector.commit(model_runner_output.finished_dumping.get(req_id, []), True)
 
             # Append generated tokens and check for stop. Note that if
             # a request is still being prefilled, we expect the model runner
